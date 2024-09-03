@@ -15,6 +15,7 @@ public class PlayerMovement : MonoBehaviour
     {
         HandleInput();
         CalculateMovement();
+        ApplyJump();
         ApplyGravity();
 
         Vector3 move = pd.currentVelocity + pd.velocity;
@@ -38,26 +39,24 @@ public class PlayerMovement : MonoBehaviour
         if (!pd.isStandingUp)
         {
             float currentMaxVelocity = pd.run ? pd.runSpeed : pd.walkSpeed;
-
             Vector3 move = Vector3.zero;
+
             if (pd.forward) move += transform.forward;
             if (pd.left) move += -transform.right;
             if (pd.right) move += transform.right;
             if (pd.backward) move += -transform.forward;
-            move = move.normalized;
 
-            pd.targetVelocity = move * currentMaxVelocity;
-
-            float rotationSpeed = pd.playerCameraAlignment.GetRotationSpeed();
-            float speedMultiplier = 1f;
-            if (rotationSpeed > pd.rotationThreshold)
+            if (move != Vector3.zero)
             {
-                speedMultiplier = 1 - Mathf.Clamp01((rotationSpeed - pd.rotationThreshold) / pd.rotationThreshold * pd.rotationSlowdownFactor);
-            }
+                move = move.normalized * currentMaxVelocity;
 
-            if (pd.targetVelocity.magnitude > 0)
-            {
-                pd.currentVelocity = Vector3.Lerp(pd.currentVelocity, pd.targetVelocity * speedMultiplier, pd.acceleration * Time.deltaTime);
+                float rotationSpeed = pd.playerCameraAlignment.GetRotationSpeed();
+                float speedMultiplier = rotationSpeed > pd.rotationThreshold
+                    ? 1 - Mathf.Clamp01((rotationSpeed - pd.rotationThreshold) / pd.rotationThreshold * pd.rotationSlowdownFactor)
+                    : 1f;
+
+                pd.targetVelocity = move * speedMultiplier;
+                pd.currentVelocity = Vector3.Lerp(pd.currentVelocity, pd.targetVelocity, pd.acceleration * Time.deltaTime);
             }
             else
             {
@@ -70,6 +69,11 @@ public class PlayerMovement : MonoBehaviour
                     pd.currentVelocity = Vector3.zero;
                 }
             }
+
+            if (pd.currentVelocity.magnitude < 0.01f)
+            {
+                pd.currentVelocity = Vector3.zero;
+            }
         }
         else
         {
@@ -77,21 +81,23 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+
+    private void ApplyJump()
+    {
+        if (pd.characterController.isGrounded && pd.jump && !pd.isStandingUp)
+        {
+            pd.animationMovement.Jump();
+            pd.verticalVelocity = Mathf.Sqrt(pd.jumpHeight * -2f * pd.gravity);
+            StartCoroutine(AdjustCharacterControllerCenter());
+            pd.jump = false;
+        }
+    }
+
     private void ApplyGravity()
     {
-        if (pd.characterController.isGrounded)
+        if (pd.characterController.isGrounded && pd.verticalVelocity <= 0)
         {
-            if (pd.jump && !pd.isStandingUp)
-            {
-                pd.animationMovement.Jump();
-                pd.verticalVelocity = Mathf.Sqrt(pd.jumpHeight * -2f * pd.gravity);
-                StartCoroutine(AdjustCharacterControllerCenter());
-                pd.jump = false;
-            }
-            else
-            {
-                pd.verticalVelocity = -2f;
-            }
+            pd.verticalVelocity = -2f;
         }
         else
         {
@@ -132,29 +138,30 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleFallingAnimation()
     {
-        if (!pd.characterController.isGrounded && pd.verticalVelocity < -pd.fallThreshold)
+        bool isFalling = !pd.characterController.isGrounded && pd.verticalVelocity < -pd.fallThreshold;
+
+        if (isFalling)
         {
-            if (Time.time - pd.fallStartTime > pd.fallTimeThreshold)
+            if (!pd.isFalling)
             {
-                if (!pd.isFalling)
-                {
-                    pd.animationMovement.Falling(true);
-                    pd.isFalling = true;
-                    pd.isStandingUp = true;
-                }
+                // Start falling
+                pd.animationMovement.Falling(true);
+                pd.isFalling = true;
+                pd.isStandingUp = true;
             }
         }
         else
         {
             if (pd.isFalling)
             {
+                // End falling
                 pd.animationMovement.Falling(false);
                 pd.isFalling = false;
-                StartCoroutine(StandingUp(11f));
+                StartCoroutine(StandingUp(11.2f));
             }
-            pd.fallStartTime = Time.time;
         }
     }
+
 
     private IEnumerator StandingUp(float duration)
     {

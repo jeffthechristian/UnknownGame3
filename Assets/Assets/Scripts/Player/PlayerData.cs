@@ -18,8 +18,6 @@ public class PlayerData : MonoBehaviour
     public float rotationThreshold;
 
     public float fallThreshold;
-    public float fallTimeThreshold;
-    public float fallStartTime;
 
     public bool isFalling;
     public bool isStandingUp;
