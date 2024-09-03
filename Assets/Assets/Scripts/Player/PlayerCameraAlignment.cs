@@ -13,6 +13,15 @@ public class PlayerCameraAlignment : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         pd.lastRotation = transform.rotation;
+
+        //set camera orbits
+        var orbits = pd.cinemachineFreelook.m_Orbits;
+
+        orbits[0] = new CinemachineFreeLook.Orbit(pd.normalTopRigHeight, pd.normalTopRigRadius);
+        orbits[1] = new CinemachineFreeLook.Orbit(pd.normalMiddleRigHeight, pd.normalMiddleRigRadius);
+        orbits[2] = new CinemachineFreeLook.Orbit(pd.normalBottomRigHeight, pd.normalBottomRigRadius);
+
+        pd.cinemachineFreelook.m_Orbits = orbits;
     }
 
     private void Update()

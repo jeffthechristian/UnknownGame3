@@ -1,3 +1,4 @@
+using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -51,9 +52,21 @@ public class PlayerData : MonoBehaviour
 
     [Header("Camera")]
     public Camera cinemachineCamera;
+    public CinemachineFreeLook cinemachineFreelook;
+
     public float rotationSpeed = 10f;
 
     public PlayerMovement playerMovement;
     public Quaternion lastRotation;
     public float rotationSpeedMeasured;
+
+    [Header("Camera Zoom in")]
+    public float normalTopRigHeight = 5f;
+    public float normalTopRigRadius = 4f;
+    public float normalMiddleRigHeight = 2f;
+    public float normalMiddleRigRadius = 3.5f;
+    public float normalBottomRigHeight = 1f;
+    public float normalBottomRigRadius = 3f;
+
+    public float transitionDuration = 0.5f;
 }
